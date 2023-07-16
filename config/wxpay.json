@@ -1,0 +1,17 @@
+{
+  "appid" : "xxxxx", 
+  "mchid" : "xxxxx",
+  "clientPrivateKeyPath" : "",
+  "clientCertPath" : "",
+  "WechatCertPath" : "",
+  "WechatPublicKeyPath" : "",
+  "Description" : "",
+  "AuthenticationType" : "",
+  "apiv3key" : "",
+  "wx_serial_no" : "",
+  "client_serial_no" : "",
+  "notify_url" : "",
+  "backup_path" : "",
+  "wxpayCfg_path" : "",
+  "wxLogPath" : "../../log/logfile.log"
+}
