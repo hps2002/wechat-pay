@@ -9,9 +9,11 @@
 #include <memory>
 
 #include "../../src/config/config.h"
-#include "../../util/Timer.h"
+#include "../../util/util.h"
 
 namespace wechat{
+
+#define GET_PLACE "| [" << __FILE__ << ":" << __LINE__ << "] " 
 
 class Level {
 public:
@@ -34,9 +36,6 @@ public:
 private:
   std::stringstream message;
 };
-
-
-
 }
 
 
