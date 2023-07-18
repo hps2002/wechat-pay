@@ -28,6 +28,8 @@ public:
     std::string backup_path;
     std::string wxpayCfg_path;
     std::string wxLogPath;
+    std::string HttpsCert;
+    std::string HttpsKey;
   } wechat;
   
   static Config& Get();

@@ -35,6 +35,8 @@ Config::Config () {
     wechat.backup_path = value_to<std::string>(j.at("backup_path"));
     wechat.wxpayCfg_path = value_to<std::string>(j.at("wxpayCfg_path"));
     wechat.wxLogPath = value_to<std::string>(j.at("wxLogPath"));
+    wechat.HttpsCert = value_to<std::string>(j.at("HttpsCert"));
+    wechat.HttpsKey = value_to<std::string>(j.at("HttpsKey"));
   }
   catch (std::exception e)
   {

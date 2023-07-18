@@ -13,5 +13,7 @@
   "notify_url" : "",
   "backup_path" : "",
   "wxpayCfg_path" : "",
-  "wxLogPath" : "../../log/logfile.log"
+  "wxLogPath" : "../../log/logfile.log",
+  "HttpsCert" : "",
+  "HttpsKey" : ""
 }
