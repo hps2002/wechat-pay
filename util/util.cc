@@ -32,4 +32,18 @@ std::string GetNonce() {
     return noncestr;
 }
 
+std::string Popen(const char* cmd) {
+  FILE *file = popen(cmd, "r");
+  if (!file) {
+    std::stringstream message;
+    MESSAGE << "Popen error file is null.";
+    throw Level::ERROR;
+  }
+  char buf[2048];
+  std::string str = "";
+  while (fgets(buf, sizeof(buf), file) != NULL)
+    str += std::string(buf);
+  return str;
+}
+
 }

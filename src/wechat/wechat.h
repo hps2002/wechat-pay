@@ -45,8 +45,10 @@ std::string gcm_decrypt(unsigned char *ciphertext, int ciphertext_len,
                 unsigned char *tag, unsigned char *key,
                 unsigned char *iv, int iv_len,
                 unsigned char *plaintext, std::stringstream& message);
-
-
+// 更新公钥
+bool RenewPubKey ();
+// 更新序列序列号
+bool RenewWXserialNo();
 }
 
 #endif

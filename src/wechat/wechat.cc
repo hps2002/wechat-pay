@@ -179,6 +179,25 @@ bool signatureVer(httplib::Result& response, std::stringstream& message) {
      throw Level::ERROR; 
     }
  } 
+
+  auto it_nonce = headers.find("Wechatpay-Nonce"),
+       it_sig = headers.find("Wechatpay-Signature"),
+       it_timestamp = headers.find("Wechatpay-Timestamp");
+  
+  std::string nonce = it_nonce -> second,
+              timestamp = it_timestamp -> second,
+              signature = it_sig -> second;
+  
+  auto body = boost::json::parse(response.value().body).as_object();
+  std::string ciphertext = boost::json::value_to<std::string>(body["ciphertext"]),
+              iv = boost::json::value_to<std::string>(body["nonce"]),
+              aad = boost::json::value_to<std::string>(body["associated_data"]),
+              bodyStr = boost::json::serialize(body),
+              sigStr = timestamp + "\n" + 
+                       nonce + "\n" + 
+                       bodyStr + "\n";
+  bool ans = Rsa_PublicVerify(cfg.wechat.WechatPublicKeyPath.c_str(), (unsigned char*)sigStr.c_str(), sigStr.size(), signature, signature.size(), message);
+
   return false;
 }
 
@@ -227,12 +246,25 @@ bool getWXcert(std::stringstream& message) {
   file.close();
 
   // 更新公钥
+  if (!RenewPubKey()) {
+    MESSAGE << "renewWXcert faild.";
+    throw Level::ERROR;
+  }
   // 更新序列号
+  if (!RenewWXserialNo()) {
+    MESSAGE << "renewPublicKey faild";
+    throw Level::ERROR;
+  }
   // 更新配置文件
-
+  val = Load(cfg.wechat.wxpayCfg_path.c_str());
+  auto param = val.as_object();
+  std::string newFile = boost::json::serialize(param);
+  std::ofstream f(cfg.wechat.wxpayCfg_path.c_str());
+  f << newFile;
+  f.close();
   return true;
 }
-// Base64解码
+
 std::string base64Decode(const std::string& encodedString) {
     std::string decodedString;
     BIO* bio = BIO_new(BIO_f_base64());
@@ -331,7 +363,26 @@ std::string gcm_decrypt(unsigned char *ciphertext, int ciphertext_len,
             res += plaintext[i];
         else 
             continue;
-
     return res;
 }
+
+bool RenewPubKey () {
+  auto cfg = Config::Get();
+  std::string cmd = "openssl x509 -in " + cfg.wechat.WechatCertPath + " -pubkey -noout > " + cfg.wechat.WechatPublicKeyPath;
+  std::string pubkey = Popen(cmd.c_str());
+  return pubkey.size() > 0;
 }
+
+bool RenewWXserialNo() {
+  auto cfg = Config::Get();
+  std::string cmd = "openssl x509 -in " + cfg.wechat.wx_serial_no + " -noout -serial";
+  std::string str = Popen(cmd.c_str());
+  int index = str.find("=");
+  if (index == std::string::npos) return false;
+  std::string str = str.substr(index + 1, str.size() - index);
+  cfg.wechat.wx_serial_no = str;
+  return true;
+}
+
+}
+// 完成签名验证
