@@ -7,7 +7,7 @@ Config& Config::Get () {
   return cfg;
 }
 
-static boost::json::value Load(const char *path) {
+boost::json::value Load(const char *path) {
   std::ifstream file(path);
   std::stringstream cfg_buf;
   cfg_buf << file.rdbuf();

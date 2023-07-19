@@ -36,5 +36,6 @@ public:
 private:
   Config();
 };
+boost::json::value Load(const char *path);
 }
 #endif

@@ -15,7 +15,10 @@ namespace wechat{
 
 #define GET_PLACE "| [" << __FILE__ << ":" << __LINE__ << " " << __func__ << "] " 
 #define MESSAGE message << GET_PLACE
-
+#define LOG(message, level) \
+{ \
+  wechat::Logger::log(message, level); \
+}
 
 class Level {
 public:
