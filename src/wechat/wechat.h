@@ -16,7 +16,7 @@
 
 namespace wechat {
 // 预下单
-boost::json::value OrderPay(const std::string open_id, const std::string order_serial, const int total, std::stringstream& message);
+boost::json::value OrderPay(const std::string open_id, const std::string order_serial, const int total);
 // 获取预下单ID
 std::string getPrepayId(const std::string open_id, const std::string order_serial, const int total);
 // 获取签名信息
@@ -31,6 +31,7 @@ std::string SginWithRSA(const std::string SignStr, std::stringstream& message);
 std::string Base64Encode(const std::string binSignature);
 // 签名验证
 bool signatureVer(httplib::Result& response, std::stringstream& message);
+bool signatureVer(httplib::Request& response, std::stringstream& message);
 // 下载微信证书
 bool getWXcert(std::stringstream& message);
 // base64解码
@@ -45,8 +46,12 @@ std::string gcm_decrypt(unsigned char *ciphertext, int ciphertext_len,
                 unsigned char *tag, unsigned char *key,
                 unsigned char *iv, int iv_len,
                 unsigned char *plaintext, std::stringstream& message);
-
-
+// 更新公钥
+bool RenewPubKey ();
+// 更新序列序列号
+bool RenewWXserialNo();
+// 回调报文解析
+boost::json::value PayCallBack(httplib::Request& request);
 }
 
 #endif
