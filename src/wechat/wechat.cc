@@ -201,6 +201,45 @@ bool signatureVer(httplib::Result& response, std::stringstream& message) {
   return false;
 }
 
+bool signatureVer(httplib::Request& response, std::stringstream& message) {
+  auto cfg = Config::Get();
+  httplib::Headers headers;
+  headers = response.headers;
+
+  auto it_serial = headers.find("Wechatpay-Serial");
+  if (it_serial == headers.end()) {
+    MESSAGE << "haders haven't Wechatpay-Serial.";
+    LOG(message, Level::WARING);
+  }
+  
+ if (it_serial -> second != cfg.wechat.mchid) {
+    if (!getWXcert(message)) {
+      MESSAGE << "get Wechat's cert faild.";
+     throw Level::ERROR; 
+    }
+ } 
+
+  auto it_nonce = headers.find("Wechatpay-Nonce"),
+       it_sig = headers.find("Wechatpay-Signature"),
+       it_timestamp = headers.find("Wechatpay-Timestamp");
+  
+  std::string nonce = it_nonce -> second,
+              timestamp = it_timestamp -> second,
+              signature = it_sig -> second;
+  
+  auto body = boost::json::parse(response.body).as_object();
+  std::string ciphertext = boost::json::value_to<std::string>(body["ciphertext"]),
+              iv = boost::json::value_to<std::string>(body["nonce"]),
+              aad = boost::json::value_to<std::string>(body["associated_data"]),
+              bodyStr = boost::json::serialize(body),
+              sigStr = timestamp + "\n" + 
+                       nonce + "\n" + 
+                       bodyStr + "\n";
+  bool ans = Rsa_PublicVerify(cfg.wechat.WechatPublicKeyPath.c_str(), (unsigned char*)sigStr.c_str(), sigStr.size(), signature, signature.size(), message);
+
+  return false;
+}
+
 bool getWXcert(std::stringstream& message) {
   auto cfg = Config::Get();
   std::string Authorization = getAuthorization("GET", "", message);
@@ -383,6 +422,12 @@ bool RenewWXserialNo() {
   cfg.wechat.wx_serial_no = str;
   return true;
 }
-
+bool ReplyWechat_aux(std::stringstream& message) {
+  boost::json::object data{
+    {"code", "SUCCESS"},
+    {"message", "成功"}
+  };
+  cli.Post(payurl, boost::json::serialize(data), "application/json");
+  return true;
 }
-// 完成签名验证
+}
