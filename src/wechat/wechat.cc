@@ -4,6 +4,7 @@ namespace wechat {
 
 const std::string payurl = "/v3/pay/transactions/jsapi";
 const std::string certurl = "/v3/certificates";
+const std::string refundUrl = "/v3/refund/domestic/refunds";
 httplib::SSLClient cli("api.mch.weixin.qq.com");
 
 std::string getPrepayId(const std::string open_id, const std::string order_serial, const int total, std::stringstream& message) {
@@ -44,7 +45,7 @@ std::string getPrepayId(const std::string open_id, const std::string order_seria
 
   auto res = boost::json::parse(response.value().body).as_object();
   if (res.contains("errcode")) {
-    MESSAGE << "$errcode = " << res["errcode"] << " $message = " << res["message"].as_string();
+    MESSAGE << "$errcode = " << boost::json::value_to<std::string>(res["errcode"]) << " $message = " << boost::json::value_to<std::string>(res["message"]);
     throw Level::ERROR;
   }
   std::string paypreId = boost::json::value_to<std::string>(res["prepay_id"]);
@@ -422,6 +423,27 @@ bool RenewWXserialNo() {
   cfg.wechat.wx_serial_no = str;
   return true;
 }
+
+boost::json::value PayClaaBack(httplib::Request request, std::stringstream& message) {
+  auto cfg = Config::Get();
+  if (!signatureVer(request, message)) {
+    MESSAGE << "PayCallBack signature Veritify faild.";
+    throw Level::ERROR;
+  }
+
+  auto resource = boost::json::parse(request.body).as_object();
+  auto body = boost::json::parse(boost::json::value_to<std::string>(resource["resource"])).as_object();
+  std::string ciphertext = boost::json::value_to<std::string>(body["ciphertext"]),
+              nonce = boost::json::value_to<std::string>(body["nonce"]), 
+              associated_data = boost::json::value_to<std::string>(body["associated_data"]);
+  
+  unsigned char buf[2048];
+  std::string plaintext = gcm_decrypt((unsigned char*)ciphertext.c_str(), ciphertext.size(), (unsigned char*)associated_data.c_str(), associated_data.size(), NULL, (unsigned char*)cfg.wechat.apiv3key.c_str(), (unsigned char*)nonce.c_str(), nonce.size(), buf, message);
+
+  boost::json::value res = boost::json::parse(plaintext);
+  return res;
+}
+
 bool ReplyWechat_aux(std::stringstream& message) {
   boost::json::object data{
     {"code", "SUCCESS"},
@@ -429,5 +451,57 @@ bool ReplyWechat_aux(std::stringstream& message) {
   };
   cli.Post(payurl, boost::json::serialize(data), "application/json");
   return true;
+}
+
+boost::json::value Refund_aux(const std::string out_trade_no, const std::string out_refund_no, std::string reason, const int refundTotal, const int total, std::stringstream& message) {
+  auto cfg = Config::Get();
+    if (reason.size() == 0) 
+    reason = "普通退款";
+  boost::json::object amout{
+    {"refund", refundTotal},
+    {"total", total},
+    {"currency", "CNY"} 
+  },
+                      body{
+    {"out_trade_no", out_trade_no},
+    {"out_refund_no", out_refund_no}, 
+    {"reason", reason},
+    {"amout", amout}
+  };
+
+  std::string Authorization = getAuthorization("Post", boost::json::serialize(body), message);
+  
+  httplib::Headers headers;
+  headers.emplace("Authorization", Authorization);
+  headers.emplace("Content-Type", "application/json");
+  headers.emplace("Accept", "application/json");
+  auto response = cli.Post(refundUrl, headers, boost::json::serialize(body), "application/json"); 
+  if (response.error() != httplib::Error::Success) {
+    MESSAGE << "refund response has falid";
+    throw Level::ERROR;
+  }
+
+  if (!signatureVer(response, message)) {
+    MESSAGE << "signature Vertify Bad";
+    throw Level::ERROR;
+  }
+
+  auto res = boost::json::parse(response.value().body).as_object();
+  if (res.contains("errcode")) {
+    MESSAGE << "$errcode = " << boost::json::value_to<std::string>(res["errcode"]) << "$message: " << boost::json::value_to<std::string>(res["message"]);
+    Logger::log(message, Level::ERROR);
+  }
+  
+  std::string resource = boost::json::value_to<std::string>(res["resource"]);
+  boost::json::object body = boost::json::parse(resource).as_object();
+  std::string ciphertext = boost::json::value_to<std::string>(body["ciphertext"]),
+              nonce = boost::json::value_to<std::string>(body["nonce"]),
+              association_data = boost::json::value_to<std::string>(body["assocation_data"]);
+  
+  unsigned char buf[3 * 1024];
+  std::string data = gcm_decrypt((unsigned char*)ciphertext.c_str(), ciphertext.size(), (unsigned char*)association_data.c_str(), association_data.size(), NULL, (unsigned char*)cfg.wechat.apiv3key.c_str(), (unsigned char*)nonce.c_str(), nonce.size(), buf, message);
+  
+  boost::json::value result = boost::json::parse(data).as_object();
+  return result;
 }
 }

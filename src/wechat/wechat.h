@@ -52,9 +52,12 @@ bool RenewPubKey ();
 bool RenewWXserialNo();
 // 回调报文解析
 boost::json::value PayCallBack(httplib::Request& request);
+boost::json::value PayCallBack_aux(httplib::Request& request, std::stringstream& message);
 // 通知应答
 bool ReplyWechat();
 bool ReplyWechat_aux(std::stringstream& message);
 }
-
+// 退款
+boost::json::value Refund(const std::string out_trade_no, const std::string out_refund_no, std::string reason, const int refundTotal, const int total);
+boost::json::value Refund_aux(const std::string out_trade_no, const std::string out_refund_no, std::string reason, const int refundTotal, const int total, std::stringstream& message);
 #endif

@@ -53,36 +53,26 @@ boost::json::value OrderPay(const std::string open_id, const std::string order_s
   } catch (std::exception e) {
     ss << GET_PLACE << e.what();
     wechat::Logger::log(ss, wechat::Level::ERROR);
+    return {};
   } catch (wechat::Level::level level) { 
     wechat::Logger::log(ss, level);
+    return {};
   }
 }
 
 boost::json::value PayCallBack(httplib::Request& request) {
   std::stringstream message;
   try {
-    auto cfg = Config::Get();
-    if (!signatureVer(request, message)) {
-      MESSAGE << "PayCallBack signature Veritify faild.";
-      throw Level::ERROR;
-    }
+    boost::json::value result = PayCallBack_aux(request, message);
 
-    auto resource = boost::json::parse(request.body).as_object();
-    auto body = boost::json::parse(boost::json::value_to<std::string>(resource["resource"])).as_object();
-    std::string ciphertext = boost::json::value_to<std::string>(body["ciphertext"]),
-                nonce = boost::json::value_to<std::string>(body["nonce"]), 
-                associated_data = boost::json::value_to<std::string>(body["associated_data"]);
-    
-    unsigned char buf[2048];
-    std::string plaintext = gcm_decrypt((unsigned char*)ciphertext.c_str(), ciphertext.size(), (unsigned char*)associated_data.c_str(), associated_data.size(), NULL, (unsigned char*)cfg.wechat.apiv3key.c_str(), (unsigned char*)nonce.c_str(), nonce.size(), buf, message);
-
-    boost::json::value res = boost::json::parse(plaintext);
-    return res;
+    return result;
   } catch (std::exception e) {
     MESSAGE << GET_PLACE << e.what();
     wechat::Logger::log(message, Level::ERROR);
+    return {};
   } catch (wechat::Level::level level) {
     wechat::Logger::log(message, level);
+    return {};
   }
 }
 
@@ -96,9 +86,31 @@ bool ReplyWechat() {
     return true;
   } catch (std::exception e) {
     MESSAGE << e.what();
-    throw Level::ERROR;
+    wechat::Logger::log(message, Level::ERROR);
+    return false;
   } catch (wechat::Level::level level) {
-    wechat::Logger::log(message, wechat::Level::ERROR);
+    if (level == Level::WARING)
+    {
+      wechat::Logger::log(message, level);
+      return true;
+    }
+    wechat::Logger::log(message, level);
+    return false;
+  }
+}
+
+boost::json::value Refund(const std::string out_trade_no, const std::string out_refund_no, std::string reason, const int refundTotal, const int total) {
+  std::stringstream message;
+  try {
+    boost::json::value result = Refund_aux(out_trade_no, out_refund_no, reason, refundTotal, total, message);
+
+    return result;
+  } catch (std::exception e) {
+    MESSAGE << e.what();
+    wechat::Logger::log(message, Level::ERROR);
+  } catch (Level::level level) {
+    wechat::Logger::log(message, level);
+    return {};
   }
 }
 
