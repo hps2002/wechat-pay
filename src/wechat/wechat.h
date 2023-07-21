@@ -52,6 +52,9 @@ bool RenewPubKey ();
 bool RenewWXserialNo();
 // 回调报文解析
 boost::json::value PayCallBack(httplib::Request& request);
+// 通知应答
+bool ReplyWechat();
+bool ReplyWechat_aux(std::stringstream& message);
 }
 
 #endif
