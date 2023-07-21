@@ -418,7 +418,7 @@ bool RenewWXserialNo() {
   std::string str = Popen(cmd.c_str());
   int index = str.find("=");
   if (index == std::string::npos) return false;
-  std::string str = str.substr(index + 1, str.size() - index);
+  str = str.substr(index + 1, str.size() - index);
   cfg.wechat.wx_serial_no = str;
   return true;
 }
