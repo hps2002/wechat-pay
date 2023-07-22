@@ -56,8 +56,22 @@ boost::json::value PayCallBack_aux(httplib::Request& request, std::stringstream&
 // 通知应答
 bool ReplyWechat();
 bool ReplyWechat_aux(std::stringstream& message);
-}
 // 退款
 boost::json::value Refund(const std::string out_trade_no, const std::string out_refund_no, std::string reason, const int refundTotal, const int total);
 boost::json::value Refund_aux(const std::string out_trade_no, const std::string out_refund_no, std::string reason, const int refundTotal, const int total, std::stringstream& message);
+// 查询
+boost::json::value OrderCheck(std::string out_trade_no, std::stringstream& message);
+boost::json::value OrderCheck_aux(std::string out_trade_no, std::stringstream& message);
+// make鉴权头
+httplib::Headers MakeHeaders (std::string Authorization);
+// 关闭订单
+bool CloseOrder (const std::string out_trade_no);
+bool CloseOrder_aux (const std::string out_trade_no, std::stringstream& message);
+
+
+
+
+
+
+}
 #endif

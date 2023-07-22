@@ -103,15 +103,29 @@ boost::json::value Refund(const std::string out_trade_no, const std::string out_
   std::stringstream message;
   try {
     boost::json::value result = Refund_aux(out_trade_no, out_refund_no, reason, refundTotal, total, message);
-
     return result;
   } catch (std::exception e) {
     MESSAGE << e.what();
     wechat::Logger::log(message, Level::ERROR);
+    return {};
   } catch (Level::level level) {
     wechat::Logger::log(message, level);
     return {};
   }
 }
 
+bool CloseOrder(const std::string out_trade_no) {
+  std::stringstream message;
+  try {
+    bool res = CloseOrder_aux(out_trade_no, message);
+    return res;
+  } catch (std::exception e) {
+    MESSAGE << e.what();
+    Logger::log(message, Level::ERROR);
+    return false;
+  } catch (Level::level level) {
+    Logger::log(message, level);
+    return false;
+  }
+}
 }
